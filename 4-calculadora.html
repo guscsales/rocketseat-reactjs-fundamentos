@@ -23,8 +23,8 @@
         rgba(255, 255, 255, 0.05) 100%;
 
       --gradient-hover: 180deg, 
-        rgba(0, 0, 0, 0.10) 0%, 
-        rgba(255, 255, 255, 0.10) 100%;
+        rgba(0, 0, 0, 0.1) 0%, 
+        rgba(255, 255, 255, 0.1) 100%;
 
       --shadow: 0px 11px 7px 0px rgba(0, 0, 0, 0.01), 
         0px 7px 7px 0px rgba(0, 0, 0, 0.04), 
@@ -51,21 +51,21 @@
       default: 'text-xl',
       muted: 'text-xl text-(--text-secondary)',
       heading: 'text-2xl',
-      blast: 'text-3xl',
+      blast: 'text-3xl'
     }
 
-    function Text({ 
+    function Text({
       as = 'span',
       variant = 'default',
-      className, 
-      children, 
-      ...props 
+      className,
+      children,
+      ...props
     }) {
       return React.createElement(
         as,
         {
-          className: `${textVariants[variant]} ${className}`,
-          ...props
+          className: `${textVariants[variant]} ${className ? className : ''}`,
+          ...props,
         },
         children
       )
@@ -73,24 +73,28 @@
 
     const buttonVariants = {
       default: 'bg-(--background)',
-      primary: 'bg-(--primary)',
+      primary: 'bg-(--primary)'
     }
 
-    function Button({ 
+    function Button({
       variant = 'default',
-      className, 
-      children, 
-      ...props 
+      className,
+      children,
+      ...props
     }) {
       return (
-        <Text 
+        <Text
           as="button"
           variant="heading"
           className={`
-            flex items-center justify-center rounded-xl p-3 cursor-pointer
-            text-(--text) bg-linear-(--gradient) shadow-(--shadow) 
+            flex items-center justify-center rounded-xl
+            p-3 cursor-pointer text-(--text) 
+            bg-linear-(--gradient) 
             hover:bg-linear-(--gradient-hover)
-            ${buttonVariants[variant]} ${className}`}
+            shadow-(--shadow)
+            ${buttonVariants[variant]}
+            ${className ? className : ''}
+          `}
           {...props}
         >
           {children}
@@ -102,93 +106,177 @@
       return (
         <div className={`
           bg-(--background) shadow-(--shadow)
-          rounded-2xl
-          ${className}
-        `}
-          {...props}
-        >
+          rounded-2xl 
+          ${className ? className : ''}
+        `}>
           {children}
         </div>
       )
     }
 
+    const buttons = [
+      [
+        { label: 'CE' },
+        { label: 'C', className: 'flex-1 h-16' },
+        { label: '/', variant: 'primary' },
+      ],
+      [
+        { label: '7' },
+        { label: '8' },
+        { label: '9' },
+        { label: '*', variant: 'primary' },
+      ],
+      [
+        { label: '4' },
+        { label: '5' },
+        { label: '6' },
+        { label: '-', variant: 'primary' },
+      ],
+      [
+        { label: '1' },
+        { label: '2' },
+        { label: '3' },
+        { label: '+', variant: 'primary' },
+      ],
+      [
+        { label: '0', className: 'flex-1 h-16' },
+        { label: ',' },
+        { label: '=', className: 'w-16 h-16 bg-[#7F45E2]' },
+      ]
+    ];
+
+    const CalculatorContext = React.createContext()
+    function CalculatorProvider({ children }) {
+      const [history, setHistory] = React.useState([]);
+
+      return (
+        <CalculatorContext.Provider value={{ history, setHistory }}>
+          {children}
+        </CalculatorContext.Provider>
+      )
+    }
+
     function CalculatorDisplay({ operation, result }) {
       return (
-        <div className="flex flex-col gap-2 px-[1.375rem] cursor-default select-none">
-          <Text as="div" variant="muted" className="flex items-center justify-end">
-            {operation}
-          </Text>
-          <div className="flex items-center justify-between">
-            <Text variant="muted">
-              =
+        <div className={`
+          flex flex-col gap-2 px-[1.375rem]
+          cursor-default select-none  
+        `}>
+            <Text
+              as="div"
+              variant="muted"
+              className="flex items-center justify-end h-7"
+            >
+              {result && operation}
             </Text>
-            <Text variant="blast">
-              {result}
-            </Text>
+          <div className={`
+            flex items-center justify-between h-9
+          `}>
+            <Text variant="muted">=</Text>
+            <Text variant="blast">{result || operation}</Text>
           </div>
         </div>
       )
     }
 
+
     function Calculator() {
+      const [operation, setOperation] = React.useState('')
+      const [result, setResult] = React.useState('')
+      const { setHistory } = React.useContext(CalculatorContext)
+
+      function handleButtonClick(label) {
+        // Parte 4
+        if (label === 'C') {
+          setOperation('')
+          setResult('')
+          return;
+        }
+
+        // Parte 4
+        if (label === 'CE' && !result) {
+          setOperation(operation.slice(0, -2))
+          return;
+        }
+
+        // Parte 5
+        if (result) {
+          setResult('')
+          setOperation(isNaN(label) ? `${result} ${label}` : label)
+          return;
+        }
+
+        // Parte 2
+        if (label === '=') {
+          const operationResult = eval(operation.replace(/,/g, '.'))
+          const parsedResult = operationResult.toString()?.replace(/\./g, ',')
+          setResult(parsedResult)
+          setHistory((prevValue) => [...prevValue, `${operation} = ${parsedResult}`])
+          return;
+        }
+
+        // Parte 3
+        if (label === ',' && !operation.includes(',')) {
+          setOperation(`${operation},`)
+          return;
+        }
+        
+        // Parte 1 / Parte 3 com a virgula
+        setOperation(`${operation}${operation.endsWith(',') ? '' : ' '}${label}`)
+        return;
+
+      }
+
       return (
-        <Card className="flex flex-col gap-[1.625rem] w-[22.25rem] pt-14 px-8 pb-8">
-          <CalculatorDisplay operation="1 + 1" result="2" />
+        <Card className={`
+          flex flex-col gap-[1.625rem] w-[22.25rem]
+          pt-14 px-8 pb-8 
+        `}
+        >
+          <CalculatorDisplay operation={operation} result={result} />
 
           <div className="flex flex-col gap-3">
-            <div className="flex gap-3">
-              <Button className="w-16 h-16">CE</Button>
-              <Button className="flex-1 h-16">C</Button>
-              <Button variant="primary" className="w-16 h-16">
-                /
-              </Button>
-            </div>
-            <div className="flex gap-3">
-              <Button className="w-16 h-16">7</Button>
-              <Button className="w-16 h-16">8</Button>
-              <Button className="w-16 h-16">9</Button>
-              <Button variant="primary" className="w-16 h-16">
-                *
-              </Button>
-            </div>
-            <div className="flex gap-3">
-              <Button className="w-16 h-16">6</Button>
-              <Button className="w-16 h-16">5</Button>
-              <Button className="w-16 h-16">4</Button>
-              <Button variant="primary" className="w-16 h-16">
-                -
-              </Button>
-            </div>
-            <div className="flex gap-3">
-              <Button className="w-16 h-16">3</Button>
-              <Button className="w-16 h-16">2</Button>
-              <Button className="w-16 h-16">1</Button>
-              <Button variant="primary" className="w-16 h-16">
-                +
-              </Button>
-            </div>
-            <div className="flex gap-3">
-              <Button className="flex-1 h-16">0</Button>
-              <Button className="w-16 h-16">,</Button>
-              <Button variant="primary" className="w-16 h-16 bg-[#7F45E2]">
-                =
-              </Button>
-            </div>
+            {buttons.map((row, index) => (
+              <div key={`row-${index}`} className="flex gap-3">
+                {row.map((button) => (
+                  <Button
+                    key={button.label}
+                    className={button.className || 'w-16 h-16'}
+                    variant={button.variant}
+                    onClick={() => handleButtonClick(button.label)}
+                  >
+                    {button.label}
+                  </Button>
+                ))}
+              </div>
+            ))}
           </div>
         </Card>
       )
     }
 
     function OperationHistory() {
-      return (
-        <Card className="w-full sm:w-[32.375rem] py-10 px-8">
-          <Text as="h1" variant="heading" className="mb-4">Histórico de Operações</Text>
+      const { history } = React.useContext(CalculatorContext);
 
-          <ul className="flex flex-col gap-3">
-            <Text as="li">1 + 1 = 2</Text>
-            <Text as="li">2 + 3 + 1 = 6</Text>
-            <Text as="li">2 + 3 = 5</Text>
-          </ul>
+      return (
+        <Card className="w-full py-10 px-8">
+          <Text
+            as="h1"
+            variant="heading"
+            className="mb-4"
+          >
+            Histórico de Operações
+          </Text>
+
+          {history.length > 0 ? (
+            <ul className="flex flex-col gap-3">
+              {history.map((operation, index) => (
+                <Text key={`operation-${index}`} as="li">{operation}</Text>
+              ))}
+            </ul>
+          ) : (
+            <Text as="p" variant="muted">Nenhuma operação recente</Text>
+          )}
         </Card>
       )
     }
@@ -196,18 +284,20 @@
     function App() {
       return (
         <main className={`
-          py-28 px-4 flex flex-col sm:flex-row 
-          items-center sm:items-stretch justify-center gap-2
+          py-28 px-4 sm:px-10
+          flex flex-col sm:flex-row
+          items-center sm:items-stretch
+          gap-2
         `}>
-          <Calculator />
-          <OperationHistory />
+          <CalculatorProvider>
+            <Calculator />
+            <OperationHistory />
+          </CalculatorProvider>
         </main>
       )
     }
 
-    ReactDOM.createRoot(document.getElementById('root')).render(
-      <App />
-    )
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />)
   </script>
 </body>
 
