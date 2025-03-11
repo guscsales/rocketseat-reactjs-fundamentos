@@ -116,44 +116,112 @@
 
     const buttons = [
       [
-        { label: 'CE' },
-        { label: 'C', className: 'flex-1 h-16' },
-        { label: '/', variant: 'primary' },
+        { input: 'CE' },
+        { input: 'C', className: 'flex-1 h-16' },
+        { input: '/', variant: 'primary' },
       ],
       [
-        { label: '7' },
-        { label: '8' },
-        { label: '9' },
-        { label: '*', variant: 'primary' },
+        { input: '7' },
+        { input: '8' },
+        { input: '9' },
+        { input: '*', variant: 'primary' },
       ],
       [
-        { label: '4' },
-        { label: '5' },
-        { label: '6' },
-        { label: '-', variant: 'primary' },
+        { input: '4' },
+        { input: '5' },
+        { input: '6' },
+        { input: '-', variant: 'primary' },
       ],
       [
-        { label: '1' },
-        { label: '2' },
-        { label: '3' },
-        { label: '+', variant: 'primary' },
+        { input: '1' },
+        { input: '2' },
+        { input: '3' },
+        { input: '+', variant: 'primary' },
       ],
       [
-        { label: '0', className: 'flex-1 h-16' },
-        { label: ',' },
-        { label: '=', className: 'w-16 h-16 bg-[#7F45E2]' },
+        { input: '0', className: 'flex-1 h-16' },
+        { input: ',' },
+        { input: '=', className: 'w-16 h-16 bg-[#7F45E2]' },
       ]
     ];
 
-    const CalculatorContext = React.createContext()
+    const CalculatorContext = React.createContext();
     function CalculatorProvider({ children }) {
       const [history, setHistory] = React.useState([]);
 
+      React.useEffect(() => {
+        const savedHistory = localStorage.getItem('history')
+        setHistory(JSON.parse(savedHistory || '[]'))
+      }, [])
+
+      function updateHistory(operation, parsedResult) {
+        setHistory((prevValue) => {
+          const updatedHistory = [...prevValue, `${operation} = ${parsedResult}`]
+
+          localStorage.setItem('history', JSON.stringify(updatedHistory))
+
+          return updatedHistory;
+        })
+      }
+
       return (
-        <CalculatorContext.Provider value={{ history, setHistory }}>
+        <CalculatorContext.Provider value={{ history, updateHistory }}>
           {children}
         </CalculatorContext.Provider>
       )
+    }
+
+    function useCalculator() {
+      const [operation, setOperation] = React.useState('')
+      const [result, setResult] = React.useState('')
+      const { updateHistory } = React.useContext(CalculatorContext)
+
+      function handleInput(input) {
+        // Parte 4
+        if (input === 'C') {
+          setOperation('')
+          setResult('')
+          return;
+        }
+
+        // Parte 4
+        if (input === 'CE' && !result) {
+          setOperation(operation.slice(0, -2))
+          return;
+        }
+
+        // Parte 5
+        if (result) {
+          setResult('')
+          setOperation(isNaN(input) ? `${result} ${input}` : input)
+          return;
+        }
+
+        // Parte 2
+        if (input === '=') {
+          const operationResult = eval(operation.replace(/,/g, '.'))
+          const parsedResult = operationResult.toString()?.replace(/\./g, ',')
+          setResult(parsedResult)
+          updateHistory(operation, parsedResult)
+          return;
+        }
+
+        // Parte 3
+        if (input === ',' && !operation.includes(',')) {
+          setOperation(`${operation},`)
+          return;
+        }
+        
+        // Parte 1 / Parte 3 com a virgula
+        setOperation(`${operation}${operation.endsWith(',') ? '' : ' '}${input}`)
+        return;
+      }
+
+      return {
+        operation,
+        result,
+        handleInput
+      }
     }
 
     function CalculatorDisplay({ operation, result }) {
@@ -179,53 +247,8 @@
       )
     }
 
-
     function Calculator() {
-      const [operation, setOperation] = React.useState('')
-      const [result, setResult] = React.useState('')
-      const { setHistory } = React.useContext(CalculatorContext)
-
-      function handleButtonClick(label) {
-        // Parte 4
-        if (label === 'C') {
-          setOperation('')
-          setResult('')
-          return;
-        }
-
-        // Parte 4
-        if (label === 'CE' && !result) {
-          setOperation(operation.slice(0, -2))
-          return;
-        }
-
-        // Parte 5
-        if (result) {
-          setResult('')
-          setOperation(isNaN(label) ? `${result} ${label}` : label)
-          return;
-        }
-
-        // Parte 2
-        if (label === '=') {
-          const operationResult = eval(operation.replace(/,/g, '.'))
-          const parsedResult = operationResult.toString()?.replace(/\./g, ',')
-          setResult(parsedResult)
-          setHistory((prevValue) => [...prevValue, `${operation} = ${parsedResult}`])
-          return;
-        }
-
-        // Parte 3
-        if (label === ',' && !operation.includes(',')) {
-          setOperation(`${operation},`)
-          return;
-        }
-        
-        // Parte 1 / Parte 3 com a virgula
-        setOperation(`${operation}${operation.endsWith(',') ? '' : ' '}${label}`)
-        return;
-
-      }
+      const { operation, result, handleInput } = useCalculator();
 
       return (
         <Card className={`
@@ -240,12 +263,12 @@
               <div key={`row-${index}`} className="flex gap-3">
                 {row.map((button) => (
                   <Button
-                    key={button.label}
+                    key={button.input}
                     className={button.className || 'w-16 h-16'}
                     variant={button.variant}
-                    onClick={() => handleButtonClick(button.label)}
+                    onClick={() => handleInput(button.input)}
                   >
-                    {button.label}
+                    {button.input}
                   </Button>
                 ))}
               </div>
