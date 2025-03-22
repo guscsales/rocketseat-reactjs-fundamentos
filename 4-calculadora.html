@@ -176,7 +176,7 @@
       const [result, setResult] = React.useState('')
       const { updateHistory } = React.useContext(CalculatorContext)
 
-      function handleInput(input) {
+      function doOperations(input) {
         // Parte 4
         if (input === 'C') {
           setOperation('')
@@ -192,8 +192,11 @@
 
         // Parte 5
         if (result) {
-          setResult('')
-          setOperation(isNaN(input) ? `${result} ${input}` : input)
+          setResult("");
+          setOperation(isNaN(input)
+            ? `${result}${input === "," ? "" : " "}${input}`
+            : input
+          );
           return;
         }
 
@@ -248,7 +251,11 @@
     }
 
     function Calculator() {
-      const { operation, result, handleInput } = useCalculator();
+      const { operation, result, doOperations } = useCalculator();
+
+      function handleInputClick(input) {
+        doOperations(input)
+      }
 
       return (
         <Card className={`
@@ -266,7 +273,7 @@
                     key={button.input}
                     className={button.className || 'w-16 h-16'}
                     variant={button.variant}
-                    onClick={() => handleInput(button.input)}
+                    onClick={() => handleInputClick(button.input)}
                   >
                     {button.input}
                   </Button>
