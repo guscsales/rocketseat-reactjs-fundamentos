@@ -186,7 +186,7 @@
 
         // Parte 4
         if (input === 'CE' && !result) {
-          setOperation(operation.slice(0, -2))
+          setOperation(operation.slice(0, -1))
           return;
         }
 
@@ -194,7 +194,7 @@
         if (result) {
           setResult("");
           setOperation(isNaN(input)
-            ? `${result}${input === "," ? "" : " "}${input}`
+            ? `${result}${input}`
             : input
           );
           return;
@@ -216,14 +216,14 @@
         }
 
         // Parte 1 / Parte 3 com a virgula
-        setOperation(`${operation}${operation.endsWith(',') ? '' : ' '}${input}`)
+        setOperation(`${operation}${input}`)
         return;
       }
 
       return {
         operation,
         result,
-        handleInput
+        doOperations
       }
     }
 
